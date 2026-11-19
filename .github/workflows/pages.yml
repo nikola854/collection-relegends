@@ -1,0 +1,37 @@
+name: Zverejneni webu
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rozbalit a pripravit web
+        run: |
+          mkdir site
+          unzip -q collection-relegends-web.zip -d site
+          rm -rf site/_cards-presmerovani site/NAVOD-SPUSTENI.txt site/.htaccess
+          sed -i '3s/G-XXXXXXXXXX/G-C5VTK2V5W3/' site/assets/analytics.js
+          grep -q 'RL_GA_ID = "G-C5VTK2V5W3"' site/assets/analytics.js
+          echo collection.relegends.cz > site/CNAME
+          touch site/.nojekyll
+          printf '<!DOCTYPE html><html lang="cs"><head><meta charset="utf-8"><title>reLEGENDS COLLECTION</title><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0; url=/"></head><body><a href="/">reLEGENDS COLLECTION</a></body></html>' > site/404.html
+          find site -type f | sort
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
