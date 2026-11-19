@@ -28,6 +28,19 @@ jobs:
           echo collection.relegends.cz > site/CNAME
           touch site/.nojekyll
           printf '<!DOCTYPE html><html lang="cs"><head><meta charset="utf-8"><title>reLEGENDS COLLECTION</title><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0; url=/"></head><body><a href="/">reLEGENDS COLLECTION</a></body></html>' > site/404.html
+          # obrazky karet ze slozky karty/ (G01..G18, G04-back; webp, jpg nebo png)
+          if [ -d karty ]; then
+            sudo apt-get install -y -qq webp >/dev/null
+            for f in karty/*; do
+              [ -f "$f" ] || continue
+              name=$(basename "$f"); code="${name%.*}"
+              case "${name,,}" in
+                *.webp) cp "$f" "site/img/cards/$code.webp" ;;
+                *.jpg|*.jpeg|*.png) cwebp -quiet -q 85 -resize 640 0 "$f" -o "site/img/cards/$code.webp" ;;
+              esac
+            done
+            rm -f site/img/cards/SEM-PATRI-KARTY.txt
+          fi
           find site -type f | sort
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
