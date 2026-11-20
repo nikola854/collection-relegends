@@ -55,6 +55,51 @@ jobs:
             sed -i 's#</head>#<link rel="stylesheet" href="/assets/layout.css"></head>#' "$h"
             grep -q 'assets/layout.css' "$h"
           done
+          # jemna stopa pneumatik pres celou stranku
+          cat > site/assets/trail.css <<'CSS'
+          /* jemna stopa pneumatik, ktera klickuje celou strankou (vlevo / vpravo) */
+          .rl-trail:is(#rl-x,.rl-trail){position:relative;overflow:hidden}
+          .rl-trail:is(#rl-x,.rl-trail)>.wrap{position:relative;z-index:1}
+          .rl-trail:is(#rl-x,.rl-trail)::before{content:"";position:absolute;top:50%;left:auto;right:auto;width:clamp(300px,34vw,560px);aspect-ratio:4/5;transform:translateY(-50%);background:center/contain no-repeat var(--t1);opacity:.13;pointer-events:none;z-index:0;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 24%,#000 76%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 24%,#000 76%,transparent 100%);clip-path:inset(0 0 0 0);transition:clip-path 2.2s cubic-bezier(.3,.7,.2,1)}
+          .rl-trail:is(#rl-x,.rl-trail).rl-b::before{background-image:var(--t2)}
+          .rl-trail:is(#rl-x,.rl-trail).rl-r::before{right:-7%}
+          .rl-trail:is(#rl-x,.rl-trail).rl-l::before{left:-7%;transform:translateY(-50%) scaleX(-1)}
+          html.rl-js .rl-trail:is(#rl-x,.rl-trail):not(.rl-in)::before{clip-path:inset(0 0 100% 0)}
+          @media (max-width:820px){
+          .rl-trail:is(#rl-x,.rl-trail)::before{width:100vw;opacity:.17}
+          .rl-trail:is(#rl-x,.rl-trail).rl-r::before{right:-46vw}
+          .rl-trail:is(#rl-x,.rl-trail).rl-l::before{left:-46vw}
+          }
+          @media (prefers-reduced-motion:reduce){.rl-trail:is(#rl-x,.rl-trail)::before{transition:none}}
+          CSS
+          cat > site/assets/trail.js <<'JS'
+          (function () {
+            var list = [
+              document.getElementById('pribeh'),
+              document.querySelector('#garaz + .band'),
+              document.getElementById('mystery'),
+              document.getElementById('urovne'),
+              document.getElementById('setkani'),
+              document.getElementById('komunita'),
+              document.getElementById('instagram')
+            ].filter(Boolean);
+            list.forEach(function (s, i) {
+              s.classList.add('rl-trail', i % 2 ? 'rl-l' : 'rl-r');
+              if (i % 2) s.classList.add('rl-b');
+            });
+            var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (still || !('IntersectionObserver' in window)) { list.forEach(function (s) { s.classList.add('rl-in'); }); return; }
+            document.documentElement.classList.add('rl-js');
+            var io = new IntersectionObserver(function (es) {
+              es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('rl-in'); io.unobserve(e.target); } });
+            }, { rootMargin: '0px 0px -20% 0px' });
+            list.forEach(function (s) { io.observe(s); });
+          })();
+          JS
+          for h in site/index.html site/en/index.html site/de/index.html site/it/index.html; do
+            sed -i 's#</head>#<link rel="stylesheet" href="/assets/trail.css"></head>#; s#</body>#<script src="/assets/trail.js" defer></script></body>#' "$h"
+            grep -q 'assets/trail.js' "$h"
+          done
           find site -type f | sort
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
