@@ -100,6 +100,34 @@ jobs:
             sed -i 's#</head>#<link rel="stylesheet" href="/assets/trail.css"></head>#; s#</body>#<script src="/assets/trail.js" defer></script></body>#' "$h"
             grep -q 'assets/trail.js' "$h"
           done
+          # deleni sekci rychlostnimi carami (z obrazku nad zapatim)
+          python3 -m pip install -q --break-system-packages pillow numpy 2>/dev/null || python3 -m pip install -q pillow numpy
+          cat > /tmp/gen_divider.py <<'PY'
+          import sys
+          from PIL import Image
+          import numpy as np
+          im=np.array(Image.open(sys.argv[1]).convert('RGBA')).astype(float)
+          c=im[30:205].copy(); h=c.shape[0]; y=np.arange(h); pk=128
+          env=np.where(y<pk,(y/pk)**0.6,np.clip(1-(y-pk)/(h-pk),0,1)**1.4)
+          c[:,:,3]*=env[:,None]*0.55
+          x=np.arange(c.shape[1]); c[:,:,3]*=np.clip(0.35+x/c.shape[1],0,1)[None,:]
+          c[:,:,:3]=14
+          o=Image.fromarray(c.clip(0,255).astype('uint8'),'RGBA')
+          o.save(sys.argv[2]+'/divider.webp',quality=85,method=6)
+          o.transpose(Image.FLIP_LEFT_RIGHT).save(sys.argv[2]+'/divider-l.webp',quality=85,method=6)
+          PY
+          python3 /tmp/gen_divider.py site/img/5c33af49.png site/assets
+          cat > site/assets/divider.css <<'CSS'
+          /* deleni sekci jemnymi rychlostnimi carami misto sede linky */
+          #pribeh,#garaz,#garaz+.band,#mystery,#urovne,#setkani,#komunita,#instagram{border-bottom:0;background-image:url("/assets/divider.webp");background-repeat:no-repeat;background-position:center bottom;background-size:100% clamp(30px,5vw,84px)}
+          #garaz,#mystery,#setkani,#instagram{background-image:url("/assets/divider-l.webp")}
+          #partneri{border-bottom:0}
+          @media (max-width:820px){#pribeh,#garaz,#garaz+.band,#mystery,#urovne,#setkani,#komunita,#instagram{background-size:180% 34px}}
+          CSS
+          for h in site/index.html site/en/index.html site/de/index.html site/it/index.html; do
+            sed -i 's#</head>#<link rel="stylesheet" href="/assets/divider.css"></head>#' "$h"
+            grep -q 'assets/divider.css' "$h"
+          done
           find site -type f | sort
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
