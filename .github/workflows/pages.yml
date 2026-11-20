@@ -129,6 +129,11 @@ jobs:
             sed -i 's#</head>#<link rel="stylesheet" href="/assets/divider.css"></head>#' "$h"
             grep -q 'assets/divider.css' "$h"
           done
+          # upravy textu
+          for h in site/index.html site/en/index.html site/de/index.html site/it/index.html; do
+            sed -i -e "s|Mystery Packy a Skyline, ze kterého je karta.|Mystery Packy a Skyline, který je součástí první série.|" -e "s|Mystery Packs and the Skyline the card was made from.|Mystery Packs and the Skyline, part of the first series.|" -e "s|Mystery Packs und der Skyline, aus dem die Karte entstand.|Mystery Packs und der Skyline, Teil der ersten Serie.|" -e "s|I Mystery Pack e la Skyline da cui è nata la carta.|I Mystery Pack e la Skyline, parte della prima serie.|" "$h"
+            grep -q "součástí první série" "$h"
+          done
           # verze souboru proti starym kopiim v prohlizeci
           sed -i "s#/assets/\(layout\|trail\|divider\)\.\(css\|js\)\"#/assets/\1.\2?v=${GITHUB_SHA::8}\"#g" site/index.html site/en/index.html site/de/index.html site/it/index.html
           find site -type f | sort
