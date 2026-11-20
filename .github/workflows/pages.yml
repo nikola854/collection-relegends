@@ -125,6 +125,8 @@ jobs:
             sed -i 's#</head>#<link rel="stylesheet" href="/assets/divider.css"></head>#' "$h"
             grep -q 'assets/divider.css' "$h"
           done
+          # verze souboru proti starym kopiim v prohlizeci
+          sed -i "s#/assets/\(layout\|trail\|divider\)\.\(css\|js\)\"#/assets/\1.\2?v=${GITHUB_SHA::8}\"#g" site/index.html site/en/index.html site/de/index.html site/it/index.html
           find site -type f | sort
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
