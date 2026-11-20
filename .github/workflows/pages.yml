@@ -223,6 +223,43 @@ jobs:
             sed -i 's#</head>#<link rel="stylesheet" href="/assets/fix.css"></head>#; s#</body>#<script src="/assets/partners.js" defer></script></body>#' "$h"
             grep -q 'assets/partners.js' "$h"
           done
+          # strukturovana data: doprava a vraceni zbozi u Mystery Packu (Search Console)
+          cat > /tmp/ld.py <<'PY'
+          import json, re, sys
+          SHIP = [{"@type": "OfferShippingDetails",
+            "shippingRate": {"@type": "MonetaryAmount", "value": "79", "currency": "CZK"},
+            "shippingDestination": {"@type": "DefinedRegion", "addressCountry": ["CZ", "SK"]},
+            "deliveryTime": {"@type": "ShippingDeliveryTime",
+              "handlingTime": {"@type": "QuantitativeValue", "minValue": 0, "maxValue": 2, "unitCode": "DAY"},
+              "transitTime": {"@type": "QuantitativeValue", "minValue": 1, "maxValue": 3, "unitCode": "DAY"}}}]
+          RET = {"@type": "MerchantReturnPolicy", "applicableCountry": ["CZ", "SK"],
+            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+            "merchantReturnDays": 14, "returnMethod": "https://schema.org/ReturnByMail",
+            "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility"}
+          def fix(o):
+              if isinstance(o, list): return [fix(x) for x in o]
+              if isinstance(o, dict):
+                  if o.get("@type") == "Product":
+                      offs = o.get("offers")
+                      for of in (offs if isinstance(offs, list) else [offs]):
+                          if isinstance(of, dict):
+                              of["shippingDetails"] = SHIP; of["hasMerchantReturnPolicy"] = RET
+                  return {k: fix(v) for k, v in o.items()}
+              return o
+          n = 0
+          for path in sys.argv[1:]:
+              s = open(path, encoding="utf-8").read()
+              def rep(m):
+                  global n
+                  d = json.loads(m.group(2)); d2 = fix(d)
+                  if 'hasMerchantReturnPolicy' in json.dumps(d2): n += 1
+                  return m.group(1) + json.dumps(d2, ensure_ascii=False) + m.group(3)
+              s = re.sub(r'(<script type="application/ld\+json">)(.*?)(</script>)', rep, s, flags=re.S)
+              open(path, "w", encoding="utf-8").write(s)
+          print("product offers updated in", n, "blocks")
+          if n < len(sys.argv) - 1: sys.exit(1)
+          PY
+          python3 /tmp/ld.py site/index.html site/en/index.html site/de/index.html site/it/index.html
           # upravy textu
           for h in site/index.html site/en/index.html site/de/index.html site/it/index.html; do
             sed -i -e "s|Mystery Packy a Skyline, ze kterého je karta.|Mystery Packy a Skyline, který je součástí první série.|" -e "s|Mystery Packs and the Skyline the card was made from.|Mystery Packs and the Skyline, part of the first series.|" -e "s|Mystery Packs und der Skyline, aus dem die Karte entstand.|Mystery Packs und der Skyline, Teil der ersten Serie.|" -e "s|I Mystery Pack e la Skyline da cui è nata la carta.|I Mystery Pack e la Skyline, parte della prima serie.|" "$h"
