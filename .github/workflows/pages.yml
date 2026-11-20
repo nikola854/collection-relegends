@@ -71,17 +71,13 @@ jobs:
           .rl-trail:is(#rl-x,.rl-trail).rl-l::before{left:-46vw}
           }
           @media (prefers-reduced-motion:reduce){.rl-trail:is(#rl-x,.rl-trail)::before{transition:none}}
+          #urovne::before,#komunita::before{content:none}
           CSS
           cat > site/assets/trail.js <<'JS'
           (function () {
             var list = [
               document.getElementById('pribeh'),
-              document.querySelector('#garaz + .band'),
-              document.getElementById('mystery'),
-              document.getElementById('urovne'),
-              document.getElementById('setkani'),
-              document.getElementById('komunita'),
-              document.getElementById('instagram')
+              document.getElementById('setkani')
             ].filter(Boolean);
             list.forEach(function (s, i) {
               s.classList.add('rl-trail', i % 2 ? 'rl-l' : 'rl-r');
@@ -122,6 +118,7 @@ jobs:
           #pribeh,#garaz,#garaz+.band,#mystery,#urovne,#setkani,#komunita,#instagram{border-bottom:0;background-image:url("/assets/divider.webp");background-repeat:no-repeat;background-position:center bottom;background-size:100% clamp(30px,5vw,84px)}
           #garaz,#mystery,#setkani,#instagram{background-image:url("/assets/divider-l.webp")}
           #partneri{border-bottom:0}
+          #pribeh{background-image:url("/assets/divider-l.webp"),url("/assets/divider.webp");background-position:center top,center bottom}
           @media (max-width:820px){#pribeh,#garaz,#garaz+.band,#mystery,#urovne,#setkani,#komunita,#instagram{background-size:180% 34px}}
           CSS
           for h in site/index.html site/en/index.html site/de/index.html site/it/index.html; do
