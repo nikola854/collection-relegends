@@ -158,15 +158,15 @@ jobs:
           #garaz>.s-foot{gap:12px}
           #garaz .deck{--dcw:150px;height:calc(var(--dcw) * 88 / 63 + 76px);margin-top:4px}
           #garaz .deck .card{top:14px}
-          #garaz .s-now{display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:6px 16px}
+          #garaz .s-now{display:grid;grid-template-columns:auto 1fr;align-items:end;gap:6px 16px}
           #garaz .s-now .code{font-size:38px}
-          #garaz .s-now .s-arrows button{width:44px;height:44px}
           #garaz .s-meta{display:contents}
           #garaz .s-meta .n{grid-column:1/-1;grid-row:1;margin-bottom:2px}
           #garaz .s-now .code{grid-column:1;grid-row:2/4;align-self:end}
           #garaz .s-meta .name{grid-column:2;grid-row:2;align-self:end}
           #garaz .s-meta .car-link{grid-column:2;grid-row:3;justify-self:start;align-self:start}
-          #garaz .s-now .s-arrows{grid-column:3;grid-row:2/4;align-self:center}
+          #garaz .s-now .s-arrows{display:none}
+          #garaz .track-h{height:34px}#garaz .track-h button{height:34px}
           }
           /* 09: partneri jdou pretacet mysi i prstem */
           .marquee.rl-drag{cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
