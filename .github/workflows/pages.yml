@@ -136,15 +136,85 @@ jobs:
           .finale-band .finale h2{font-size:clamp(38px,6.2vw,88px)}
           .finale-band .finale .finale-tag{font-family:var(--mono);font-size:12px;letter-spacing:.32em;color:var(--muted);margin-top:-14px}
           .finale-band .finale .finale-tag b{color:var(--red);font-weight:400;padding-inline:.5em}
-          footer .foot{flex-direction:column;align-items:center;text-align:center}
-          footer .foot-brand{justify-items:center;margin-inline:auto}
-          footer .foot-links{justify-content:center;justify-items:center;text-align:center}
-          footer .foot-links button.cookie-link{text-align:center}
-          footer .foot-base{flex-direction:column;align-items:center;text-align:center}
           CSS
           for h in site/index.html site/en/index.html site/de/index.html site/it/index.html; do
             sed -i -e 's#<h2>Every car has a <em class="red">card.</em></h2>#<h2>Collect what you love. <em class="red">Meet at the garage.</em></h2><div class="finale-tag">COLLECT<b>|</b>TRADE<b>|</b>PLAY</div>#' -e 's#</head>#<link rel="stylesheet" href="/assets/final.css"></head>#' "$h"
             grep -q 'finale-tag' "$h"
+          done
+          # opravy: mrizka 18 GRID, poradi u 02 na telefonu, pretaceni partneru
+          cat > site/assets/fix.css <<'CSS'
+          /* 06: 18 GRID karet jako uhledna mrizka, bez prekryvani */
+          #setkani .slots{row-gap:10px;column-gap:8px}
+          #setkani .slots span.card{--cw:100%;width:auto;height:auto;aspect-ratio:63/88;border:0;border-radius:4px;background:#111;padding:0;overflow:hidden;transform:none;animation:none;box-shadow:0 6px 14px rgba(17,17,17,.22)}
+          #setkani .slots span.card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:none}
+          #setkani .slots span.card .streak{display:none}
+          @media (hover:hover){#setkani .slots span.card{transition:transform .25s}#setkani .slots span.card:hover{transform:translateY(-4px) scale(1.04);z-index:2}}
+          /* 02: na telefonu nejdriv nazev auta, pod nim karty */
+          @media (max-width:820px){
+          #garaz{display:flex;flex-direction:column}
+          #garaz>.s-head{order:1}#garaz>.s-foot{order:2;margin-top:20px;gap:12px}#garaz>.deck{order:3}
+          #garaz .deck{--dcw:150px;height:calc(var(--dcw) * 88 / 63 + 76px);margin-top:4px}
+          #garaz .deck .card{top:14px}
+          #garaz .s-now{display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:6px 16px}
+          #garaz .s-now .code{font-size:38px}
+          #garaz .s-now .s-arrows{grid-column:3;grid-row:1}
+          #garaz .s-now .s-arrows button{width:44px;height:44px}
+          #garaz .s-meta{min-width:0}
+          }
+          /* 09: partneri jdou pretacet mysi i prstem */
+          .marquee.rl-drag{cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+          .marquee.rl-drag.is-drag{cursor:grabbing}
+          .marquee.rl-drag .marquee-track{animation:none!important;will-change:transform}
+          .marquee.rl-drag img{-webkit-user-drag:none;pointer-events:none}
+          @media (prefers-reduced-motion:reduce){.marquee.rl-drag{-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}.marquee.rl-drag .marquee-track{width:max-content;flex-wrap:nowrap;padding-inline:0}.marquee.rl-drag .marquee-track [aria-hidden="true"]{display:grid}}
+          CSS
+          cat > site/assets/partners.js <<'JS'
+          /* partneri: plynule jedou sami, jdou chytit a rychle pretocit mysi i prstem */
+          (function () {
+            var m = document.getElementById('marquee'), t = document.getElementById('marqueeTrack');
+            if (!m || !t) return;
+            var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+            m.classList.add('rl-drag');
+            var x = 0, v = 0, auto = reduce ? 0 : 0.45, down = false, sx = 0, x0 = 0, lx = 0, lt = 0, moved = 0, hover = false;
+            function half() { return t.scrollWidth / 2; }
+            function apply() { var w = half(); if (w > 0) x = ((x % w) + w) % w; t.style.transform = 'translate3d(' + (-x) + 'px,0,0)'; }
+            function loop() {
+              if (!down) {
+                if (Math.abs(v) > 0.05) { x += v; v *= 0.94; }
+                else if (!hover) x += auto;
+                apply();
+              }
+              requestAnimationFrame(loop);
+            }
+            m.addEventListener('pointerdown', function (e) {
+              if (e.button !== undefined && e.button !== 0) return;
+              down = true; moved = 0; sx = e.clientX; x0 = x; lx = e.clientX; lt = performance.now(); v = 0;
+              m.classList.add('is-drag');
+            });
+            window.addEventListener('pointermove', function (e) {
+              if (!down) return;
+              var dx = e.clientX - sx; moved = Math.max(moved, Math.abs(dx));
+              x = x0 - dx;
+              var now = performance.now(), dt = now - lt;
+              if (dt > 0) v = -(e.clientX - lx) / dt * 16;
+              lx = e.clientX; lt = now; apply();
+            });
+            function end() { if (!down) return; down = false; m.classList.remove('is-drag'); if (performance.now() - lt > 90) v = 0; v = Math.max(-60, Math.min(60, v)); }
+            window.addEventListener('pointerup', end); window.addEventListener('pointercancel', end);
+            m.addEventListener('click', function (e) { if (moved > 6) { e.preventDefault(); e.stopPropagation(); } }, true);
+            m.addEventListener('dragstart', function (e) { e.preventDefault(); });
+            m.addEventListener('wheel', function (e) {
+              var d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : 0;
+              if (d) { e.preventDefault(); v += d * 0.06; }
+            }, { passive: false });
+            m.addEventListener('mouseenter', function () { hover = true; });
+            m.addEventListener('mouseleave', function () { hover = false; });
+            requestAnimationFrame(loop);
+          })();
+          JS
+          for h in site/index.html site/en/index.html site/de/index.html site/it/index.html; do
+            sed -i 's#</head>#<link rel="stylesheet" href="/assets/fix.css"></head>#; s#</body>#<script src="/assets/partners.js" defer></script></body>#' "$h"
+            grep -q 'assets/partners.js' "$h"
           done
           # upravy textu
           for h in site/index.html site/en/index.html site/de/index.html site/it/index.html; do
@@ -152,7 +222,7 @@ jobs:
             grep -q "součástí první série" "$h"
           done
           # verze souboru proti starym kopiim v prohlizeci
-          sed -i "s#/assets/\(layout\|trail\|divider\|final\)\.\(css\|js\)\"#/assets/\1.\2?v=${GITHUB_SHA::8}\"#g" site/index.html site/en/index.html site/de/index.html site/it/index.html
+          sed -i "s#/assets/\(layout\|trail\|divider\|final\|fix\|partners\)\.\(css\|js\)\"#/assets/\1.\2?v=${GITHUB_SHA::8}\"#g" site/index.html site/en/index.html site/de/index.html site/it/index.html
           find site -type f | sort
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
