@@ -129,13 +129,30 @@ jobs:
             sed -i 's#</head>#<link rel="stylesheet" href="/assets/divider.css"></head>#' "$h"
             grep -q 'assets/divider.css' "$h"
           done
+          # spodni cerna cast: novy nadpis a vse na stred
+          cat > site/assets/final.css <<'CSS'
+          .finale-band .finale{text-align:center;justify-items:center}
+          .finale-band .finale p{text-align:center;margin-inline:auto}
+          .finale-band .finale h2{font-size:clamp(38px,6.2vw,88px)}
+          .finale-band .finale .finale-tag{font-family:var(--mono);font-size:12px;letter-spacing:.32em;color:var(--muted);margin-top:-14px}
+          .finale-band .finale .finale-tag b{color:var(--red);font-weight:400;padding-inline:.5em}
+          footer .foot{flex-direction:column;align-items:center;text-align:center}
+          footer .foot-brand{justify-items:center;margin-inline:auto}
+          footer .foot-links{justify-content:center;justify-items:center;text-align:center}
+          footer .foot-links button.cookie-link{text-align:center}
+          footer .foot-base{flex-direction:column;align-items:center;text-align:center}
+          CSS
+          for h in site/index.html site/en/index.html site/de/index.html site/it/index.html; do
+            sed -i -e 's#<h2>Every car has a <em class="red">card.</em></h2>#<h2>Collect what you love. <em class="red">Meet at the garage.</em></h2><div class="finale-tag">COLLECT<b>|</b>TRADE<b>|</b>PLAY</div>#' -e 's#</head>#<link rel="stylesheet" href="/assets/final.css"></head>#' "$h"
+            grep -q 'finale-tag' "$h"
+          done
           # upravy textu
           for h in site/index.html site/en/index.html site/de/index.html site/it/index.html; do
             sed -i -e "s|Mystery Packy a Skyline, ze kterého je karta.|Mystery Packy a Skyline, který je součástí první série.|" -e "s|Mystery Packs and the Skyline the card was made from.|Mystery Packs and the Skyline, part of the first series.|" -e "s|Mystery Packs und der Skyline, aus dem die Karte entstand.|Mystery Packs und der Skyline, Teil der ersten Serie.|" -e "s|I Mystery Pack e la Skyline da cui è nata la carta.|I Mystery Pack e la Skyline, parte della prima serie.|" "$h"
             grep -q "součástí první série" "$h"
           done
           # verze souboru proti starym kopiim v prohlizeci
-          sed -i "s#/assets/\(layout\|trail\|divider\)\.\(css\|js\)\"#/assets/\1.\2?v=${GITHUB_SHA::8}\"#g" site/index.html site/en/index.html site/de/index.html site/it/index.html
+          sed -i "s#/assets/\(layout\|trail\|divider\|final\)\.\(css\|js\)\"#/assets/\1.\2?v=${GITHUB_SHA::8}\"#g" site/index.html site/en/index.html site/de/index.html site/it/index.html
           find site -type f | sort
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
