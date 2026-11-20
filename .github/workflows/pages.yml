@@ -45,6 +45,16 @@ jobs:
             done
             rm -f site/img/cards/SEM-PATRI-KARTY.txt
           fi
+          # rozlozeni pres celou sirku + menu v liste od 1200 px
+          cat > site/assets/layout.css <<'CSS'
+          .wrap{max-width:1760px;padding-left:max(clamp(16px,4vw,80px),env(safe-area-inset-left,0px));padding-right:max(clamp(16px,4vw,80px),env(safe-area-inset-right,0px))}
+          @media (min-width:1200px){.nav-bar{grid-template-columns:auto 1fr auto!important;gap:clamp(14px,1.4vw,32px)}.nav-links{display:flex!important;justify-content:center;gap:clamp(12px,1.4vw,36px)}.menu-btn{display:none!important}.nav-panel{display:none!important}}
+          @media (min-width:1200px) and (max-width:1499px){.logo small{display:none}.nav-links{font-size:10px;letter-spacing:.12em}nav .btn{padding:0 14px}}
+          CSS
+          for h in site/index.html site/en/index.html site/de/index.html site/it/index.html; do
+            sed -i 's#</head>#<link rel="stylesheet" href="/assets/layout.css"></head>#' "$h"
+            grep -q 'assets/layout.css' "$h"
+          done
           find site -type f | sort
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
